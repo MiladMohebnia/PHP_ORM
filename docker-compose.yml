@@ -1,0 +1,31 @@
+version: "3"
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-orm
+    working_dir: /
+    volumes:
+      - ./nginx-config/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 8080:80
+
+  php-fpm:
+    image: mohebnia/php-fpm
+    container_name: php-fpm-orm
+    working_dir: /home/www-data/
+    volumes:
+      - ./:/home/www-data/
+      - ./php-fpm-conf/php-ini-overrides.ini:/usr/local/etc/php/conf.d/99.overrides.ini
+      - ./php-fpm-conf/xdebug.so:/usr/local/etc/php/modules/xdebug.so
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb-orm
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=sample
+      - MYSQL_USER=a
+      - MYSQL_PASSWORD=a
+    volumes:
+      - ./mariadb/data:/var/lib/mysql
+    ports:
+      - 3306:3306
