@@ -3,6 +3,7 @@
 namespace miladm\table;
 
 use miladm\table\query\InsertDataType;
+use miladm\table\query\SelectDataType;
 use miladm\table\query\UpdateDataType;
 
 class QueryMaker
@@ -99,6 +100,31 @@ class QueryMaker
 		}
 		return $condition;
 	}
+
+	public static function select($table, $cols): SelectDataType
+	{
+		if (!$cols) {
+			$cols = "*";
+		}
+		if (is_array($cols)) {
+			$cols = Parse::selectCols($cols);
+		}
+		$tables = Parse::selectTables($table);
+		$condition = $table->index['condition'] ?? '';
+		$scopeString =  self::index($condition);
+		if (is_array($table->control)) {
+			$group = $table->control['group'] ?? '';
+			$having = $table->control['having'] ?? '';
+			$order = $table->control['order'] ?? '';
+			$limit = $table->control['limit'] ?? '';
+			$scopeString .= $group . $having . $order . $limit;
+		}
+		$query = "SELECT $cols FROM $tables " . $scopeString;
+		$selectData = new SelectDataType;
+		$selectData->string = $query;
+		return $selectData;
+	}
+
 
 	public static function selectTables(&$table)
 	{

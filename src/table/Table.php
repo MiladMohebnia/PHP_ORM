@@ -105,12 +105,47 @@ abstract class Table
             ));
         }
         $that = clone $this;
-        return $that->parseAndAddStringCondition($condition, $variables);
+        return $that->parseAndAddStringScope($condition, $variables);
     }
 
     protected function setWhere($condition): Table
     {
-        return $this->parseAndAddStringCondition($condition, false);
+        return $this->parseAndAddStringScope($condition, false);
+    }
+
+    public function orderDesc($column = false): Table
+    {
+        return $this->order($column, false);
+    }
+
+    public function order($column = false, $asc = true): Table
+    {
+        $that = clone $this;
+        if (is_array($column)) {
+            foreach ($column as $value) {
+                if (is_array($value)) {
+                    $that = $that->order($value[0], $value[1]);
+                } else {
+                    $that = $that->order($value);
+                }
+            }
+            return $that;
+        }
+        if (!isset($that->control['order'])) {
+            $that->control['order'] = " ORDER BY ";
+        } else {
+            $that->control['order'] .= ", ";
+        }
+        if (!$column || $column === true) {
+            $column = $this->key;
+        } else {
+            $column = "`" . str_replace(".", "`.`", $column) . "`";
+        }
+        $that->control['order'] .= $column;
+        if (!$asc) {
+            $that->control['order'] .= " desc ";
+        }
+        return $that;
     }
 
     public function update($data)
@@ -127,40 +162,21 @@ abstract class Table
 
     public function select($cols = null)
     {
-
-        // variables below will be replaced in extract(that->control) .. for error handling on cli we defined them.
-        $group = '';
-        $having = '';
-        $order = '';
-        $limit = '';
-
         $that = clone $this;
-        if (is_int($cols)) {
-            $that = $that->where($this->key . "=?", $cols);
-            $cols = null;
-        }
-        if (!$cols) {
-            $cols = "*";
-        }
-        if (is_array($cols)) {
-            $cols = Parse::selectCols($cols);
-        }
-        $tables = Parse::selectTables($that);
         foreach ($that->join as $key => $value) {
+            trigger_error('see me!');
             $that->setWhere($key . "=" . $value);
         }
-        if (is_array($that->control)) {
-            extract($that->control);
-        }
-        $condition = $that->index["condition"] ?? '';
-        $query = "SELECT $cols FROM $tables " . $condition . $group . $having . $order . $limit;
-        if ($table = $that->run($query, $that->index["variables"] ?? [])) {
-            if (!isset($table[1])) {
-                return $table[0];
-            }
-            return $table;
+        $selectQueryData = QueryMaker::select($that, $cols);
+        if ($result = $that->run($selectQueryData->string, $that->index["variables"] ?? [])) {
+            return $result;
         }
         return false;
+    }
+
+    public function count()
+    {
+        return $this->select("count(*) as count")[0]->count;
     }
 
     public function name()
@@ -189,7 +205,7 @@ abstract class Table
         return $cond;
     }
 
-    private function parseAndAddStringCondition($condition, $variables)
+    private function parseAndAddStringScope($condition, $variables)
     {
         if (!$condition) {
             return $this;

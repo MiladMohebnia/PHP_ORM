@@ -37,7 +37,7 @@ $u = new user();
 //     ->update(['name' => 'milad', "age" => 10]);
 // $r = $u
 //     ->update(['name' => 'milad', "age" => 12]);
-$r = $u->where('id>=? and id<?', [7, 9])->select();
+$r = $u->where('id><?&?', [7, 9])->order('age')->select();
 die(json_encode(
     $r,
     JSON_PRETTY_PRINT
