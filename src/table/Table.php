@@ -2,6 +2,8 @@
 
 namespace miladm\table;
 
+use Exception;
+
 defined('DEVMODE') ?: define('DEVMODE', false);
 
 abstract class Table
@@ -73,17 +75,15 @@ abstract class Table
 
     public function insert($data)
     {
-        if (!$this->validInput($data))
+        if (!$this->validInput($data)) {
             return false;
+        }
         $that = clone $this;
         $that->mergeNewData($data);
-        $parsedDataList = Parse::insert($data, $this->base);
-        $args = $parsedDataList['args'];
-        $vals = $parsedDataList['vals'];
-        $data = $parsedDataList['data'];
-        $query = "INSERT INTO `$this->tableName` ($args) VALUES ($vals)";
-        if ($that->id = $that->run($query, $data))
+        $insertQuery = QueryMaker::insert($that, $data);
+        if ($that->id = $that->run($insertQuery->string, $insertQuery->data)) {
             return $that->where("id = ?", $that->id);
+        }
         return false;
     }
 
@@ -110,35 +110,18 @@ abstract class Table
 
     protected function setWhere($condition): Table
     {
-        if (!$condition) {
-            return $this;
-        }
-        if ($this->index["condition"]) {
-            $this->index["condition"] .= " AND ";
-        } else {
-            $this->index["condition"] .= "WHERE ";
-        }
-        $this->index["condition"] .= Parse::index($condition) . " ";
-        return $this;
+        return $this->parseAndAddStringCondition($condition, false);
     }
 
     public function update($data)
     {
-        if (!$this->validInput($data))
+        if (!$this->validInput($data)) {
             return false;
-        $parsedDataList = Parse::update($data);
-        $sets = $parsedDataList['sets'];
-        $data = $parsedDataList['data'];
-        $this->mergeNewData($data);
-        $leftJoinQuery = '';
-        if ($this->leftJoin && is_array($this->leftJoin)) {
-            foreach ($this->leftJoin as $leftJoinTable) {
-                $leftJoinQuery .= ' LEFT JOIN ' . $leftJoinTable[0] . ' ON ' . $leftJoinTable[1];
-            }
         }
-        $query = "UPDATE `$this->tableName` $leftJoinQuery SET $sets " . ($this->index["condition"] ?? '');
-        $executeData = array_merge($data, ($this->index["variables"] ?? []));
-        return $this->run($query, $executeData);
+        $updateData = QueryMaker::update($this, $data);
+        $this->mergeNewData($updateData->data);
+        $executeData = array_merge($updateData->data, ($this->index["variables"] ?? []));
+        return $this->run($updateData->string, $executeData);
     }
 
 
@@ -208,12 +191,19 @@ abstract class Table
 
     private function parseAndAddStringCondition($condition, $variables)
     {
+        if (!$condition) {
+            return $this;
+        }
         if (isset($this->index["condition"])) {
             $this->index["condition"] .= " AND ";
         } else {
-            $this->index["condition"] = "WHERE ";
+            $this->index["condition"] = " WHERE ";
         }
-        $this->index["condition"] .= Parse::index($condition);
+        $this->index["condition"] .= $condition;
+        // $this->index["condition"] .= Parse::index($condition) . " ";
+        if (!$variables) {
+            return $this;
+        }
         $variables = is_array($variables) ? $variables : [$variables];
         if (!isset($this->index["variables"])) {
             $this->index["variables"] = $variables;
@@ -240,33 +230,43 @@ abstract class Table
 
     private function run($query, $data = [])
     {
-        #check connection
         $this->connection = $this->connection()->connect();
-        // if (DEVMODE) {
-        //     ob_clean();
-        //     (var_dump($query, $data));
-        // }
-        if (!$request = $this->connection->PDO->prepare($query))
+        if (!$request = $this->connection->PDO->prepare($query)) {
             die(trigger_error("There's a problem in query : " . $query));
+        }
 
         // if there was any error then add it to erro list and return false
         // database respond error goes here
-        if (!$result = $request->execute($data)) {
+        if (!($result = $request->execute($data))) {
 
             // mostly error message is the third value of errorInfo()
             // if no error message then return the whole error as object
-            $errorMessage = $request->errorInfo()[2] ?? $request->errorInfo();
-            // \_e::set("database", $errorMessage);
+            throw new Exception($request->errorInfo()[2] ?? $request->errorInfo());
             return false;
         }
+
+        // if it was insertion then return the Id
         $id = (int)$this->connection->PDO->lastInsertId();
-        if ($id)
+        if ($id) {
             return $id; // for insertion
+        }
+
+        // if it was selection then fetch data
         $row = $request->fetchAll($this->fetchMode);
-        if (is_bool($result) && $result && !$row)
+        if (is_bool($result) && $result && !$row) {
+
+            // if there are no rows then it was update. let's return 
+            // how many rows affected
             return $request->rowCount();
-        if ($request->rowCount() === 1)
+        }
+
+        // if there's a single result let's return as array so data type
+        // not change if there's only a single result
+        if ($request->rowCount() === 1) {
             $row = [$row];
+        }
+
+        // in the end return rows but if anything's wrong let's return false;
         return $row ?: false;
     }
 
