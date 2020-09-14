@@ -148,6 +148,41 @@ abstract class Table
         return $that;
     }
 
+    public function group($column): Table
+    {
+        $that = clone $this;
+        if (!isset($that->control['group'])) {
+            $that->control['group'] = " GROUP BY ";
+        } else {
+            $that->control['group'] .= ", ";
+        }
+        $column = str_replace(".", "`.`", $column);
+        $that->control['group'] .= "`$column` ";
+        return $that;
+    }
+
+    public function having($condition): Table
+    {
+        $that = clone $this;
+        if (!isset($that->control['having'])) {
+            $that->control['having'] = " HAVING ";
+        } else {
+            $that->control['having'] .= "AND ";
+        }
+        $that->control['having'] .= QueryMaker::index($condition) . " ";
+        return $that;
+    }
+
+    public function limit(int $count, int $startPoint = 0): Table
+    {
+        if (!$count || !is_int($count) || !is_int($startPoint)) {
+            return $this;
+        }
+        $that = clone $this;
+        $that->control['limit'] = " LIMIT $startPoint, $count ";
+        return $that;
+    }
+
     public function update($data)
     {
         if (!$this->validInput($data)) {
