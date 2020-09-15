@@ -54,15 +54,15 @@ class QueryMaker
 		}
 		$data = $executeData;
 		$leftJoinQuery = '';
-		if ($table->leftJoin && is_array($table->leftJoin)) {
-			trigger_error('check here please');
-			foreach ($table->leftJoin as $leftJoinTable) {
-				$leftJoinQuery .= ' LEFT JOIN ' . $leftJoinTable[0] . ' ON ' . $leftJoinTable[1];
-			}
-		}
+		// if ($table->leftJoin && is_array($table->leftJoin)) {
+		// 	trigger_error('check here please');
+		// 	foreach ($table->leftJoin as $leftJoinTable) {
+		// 		$leftJoinQuery .= ' LEFT JOIN ' . $leftJoinTable[0] . ' ON ' . $leftJoinTable[1];
+		// 	}
+		// }
 		$scopeString = "";
 		if (($table->index["condition"] ?? false)) {
-			$scopeString = self::index($table->index["condition"]);
+			$scopeString = self::index($table);
 		}
 		$query = "UPDATE `" . $table->name() . "` $leftJoinQuery SET $sets " . $scopeString;
 		$updateData = new UpdateDataType;
@@ -71,9 +71,11 @@ class QueryMaker
 		return $updateData;
 	}
 
-	public static function index($condition)
+	public static function index($table)
 	{
+		$condition = $table->index["condition"] ?? '';
 		$placeHolders = [
+			"__key__" => $table->key,
 			"=" => " = ",
 			"><" => " BETWEEN ",
 			"!" => " NOT ",
@@ -93,25 +95,25 @@ class QueryMaker
 		foreach ($matches[0] as $key => $value) {
 			$condition = str_replace($value, "[[$key]]", $condition);
 		}
-		foreach ($placeHolders as $key => $value)
+		foreach ($placeHolders as $key => $value) {
 			$condition = str_replace($key, $value, $condition);
+		}
 		foreach ($matches[0] as $key => $value) {
 			$condition = str_replace("[[$key]]", $value, $condition);
 		}
 		return $condition;
 	}
 
-	public static function select($table, $cols): SelectDataType
+	public static function select($table, $columnList): SelectDataType
 	{
-		if (!$cols) {
-			$cols = "*";
+		if (!$columnList) {
+			$columnList = "*";
 		}
-		if (is_array($cols)) {
-			$cols = Parse::selectCols($cols);
+		if (is_array($columnList)) {
+			$columnList = self::selectcolumnList($columnList);
 		}
-		$tables = Parse::selectTables($table);
-		$condition = $table->index['condition'] ?? '';
-		$scopeString =  self::index($condition);
+		$tables = self::selectTables($table);
+		$scopeString =  self::index($table);
 		if (is_array($table->control)) {
 			$group = $table->control['group'] ?? '';
 			$having = $table->control['having'] ?? '';
@@ -119,7 +121,7 @@ class QueryMaker
 			$limit = $table->control['limit'] ?? '';
 			$scopeString .= $group . $having . $order . $limit;
 		}
-		$query = "SELECT $cols FROM $tables " . $scopeString;
+		$query = "SELECT $columnList FROM $tables " . $scopeString;
 		$selectData = new SelectDataType;
 		$selectData->string = $query;
 		return $selectData;
@@ -129,39 +131,25 @@ class QueryMaker
 	public static function selectTables(&$table)
 	{
 		$tables = "`" . $table->name() . "`";
-		if ($table->as)
-			$tables .= " as " . $table->as;
-
-		#adding left joins
-		$leftJoin = $table->leftJoin ? self::leftJoins($table->leftJoin) : "";
-		$tables .= " " . @$leftJoin;
-		return $tables = static::mkt($table->parentNameList) . $tables;
-	}
-
-	private static function mkt(&$pnames)
-	{
-		$tables = false;
-		if (!$pnames)
-			return;
-		foreach ($pnames as $val) {
-			$tables .= "`" . $val["name"] . "`";
-			if ($val["as"])
-				$tables .= " as " . $val["as"];
-
-			#adding left joins
-			$leftJoin = $val["leftJoin"] ? self::leftJoins($val["leftJoin"]) : "";
-			$tables .= " " . @$leftJoin;
-
-			#preparing for next table
-			$tables .= ", ";
-		}
+		$tables .= $table->relation ? self::concatRelationTableList($table->relation) : '';
+		// $leftJoin = $table->leftJoin ? self::leftJoins($table->leftJoin) : "";
+		// $tables .= " " . @$leftJoin;
 		return $tables;
 	}
 
-	public static function selectCols($cols)
+	private static function concatRelationTableList(Relation $relation)
+	{
+		$result = '';
+		foreach ($relation->tableList as $table) {
+			$result .= ", `$table`";
+		}
+		return $result;
+	}
+
+	public static function selectcolumnList($columnList)
 	{
 		$columns = "";
-		foreach ($cols as $key => $val) {
+		foreach ($columnList as $key => $val) {
 			if ($key > 0)
 				$columns .= ", ";
 			foreach ([
