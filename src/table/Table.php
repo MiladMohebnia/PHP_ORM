@@ -9,8 +9,11 @@ defined('DEVMODE') ?: define('DEVMODE', false);
 abstract class Table
 {
     private $connection;
-    private $key;
+
+    public $key;
+
     private $tableName;
+
     private $fetchMode = \PDO::FETCH_OBJ;
 
     //  if we made this table under other table's permition
@@ -20,20 +23,21 @@ abstract class Table
     public $index = [];
 
     // join tables @ selection
-    public $join = [];
+    public $relation = null;
 
     //to set query control @ selection
     public $control;
 
-    // parent if exists
-    public $parent = false;
+    public $trace = false;
 
     // parent if exists
-    public $parentNameList = false;
-    public $as = false;
+    // public $parent = false;
+
+    // parent if exists
+    // public $parentNameList = false;
 
     // to left join in selection
-    public $leftJoin = false;
+    // public $leftJoin = false;
 
     // to set data to insert or to show
     public $data = [];
@@ -59,6 +63,14 @@ abstract class Table
         $this->key = $this->cookColumn($this->key());
     }
 
+    public function cookColumn($column)
+    {
+        if (strpos($column, '.') > 0) {
+            return $column;
+        }
+        return "`$this->tableName`.`$column`";
+    }
+
     abstract public function connection();
 
     abstract public function tableName();
@@ -66,6 +78,13 @@ abstract class Table
     public function key()
     {
         return 'id';
+    }
+
+    public function trace($state = true)
+    {
+        $that = clone $this;
+        $that->trace = $state;
+        return $that;
     }
 
     public function query($query, $data = null)
@@ -194,15 +213,11 @@ abstract class Table
         return $this->run($updateData->string, $executeData);
     }
 
-
-    public function select($cols = null)
+    public function select($columnList = null)
     {
         $that = clone $this;
-        foreach ($that->join as $key => $value) {
-            trigger_error('see me!');
-            $that->setWhere($key . "=" . $value);
-        }
-        $selectQueryData = QueryMaker::select($that, $cols);
+        $that->makeRelationMappings();
+        $selectQueryData = QueryMaker::select($that, $columnList);
         if ($result = $that->run($selectQueryData->string, $that->index["variables"] ?? [])) {
             return $result;
         }
@@ -217,6 +232,35 @@ abstract class Table
     public function name()
     {
         return $this->tableName;
+    }
+
+    public function join(Table $table, $mapping = null): Table
+    {
+        $relation = $this->getRelation();
+        if (!is_array($mapping)) {
+            $mapping = [$this->key, $table->cookColumn($mapping)];
+        }
+        $relation->join($table, $mapping);
+        $that = clone $this;
+        $that->relation = $relation;
+        return $that;
+    }
+
+    public function getRelation(): Relation
+    {
+        return $this->Relation ?? new Relation($this);
+    }
+
+    public function makeRelationMappings()
+    {
+        foreach ($this->relation->mappingList as $mapping) {
+            $this->setWhere($mapping[0] . "=" . $mapping[1]);
+        }
+    }
+
+    public function relation(): Table
+    {
+        return $this;
     }
 
     private function arrayConditionToString($condition)
@@ -279,8 +323,15 @@ abstract class Table
         return false;
     }
 
+
     private function run($query, $data = [])
     {
+        if ($this->trace) {
+            die(var_dump([
+                "query" => $query,
+                "data" => $data
+            ]));
+        }
         $this->connection = $this->connection()->connect();
         if (!$request = $this->connection->PDO->prepare($query)) {
             die(trigger_error("There's a problem in query : " . $query));
@@ -319,10 +370,5 @@ abstract class Table
 
         // in the end return rows but if anything's wrong let's return false;
         return $row ?: false;
-    }
-
-    private function cookColumn($column)
-    {
-        return "`$this->tableName`.`$column`";
     }
 }
