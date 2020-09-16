@@ -66,6 +66,11 @@ abstract class Table
             $this->coverName = $coverName;
         }
         $this->key = $this->cookColumn($this->key());
+        $this->init();
+    }
+
+    public function init()
+    {
     }
 
     public function cookColumn($column)
@@ -266,7 +271,7 @@ abstract class Table
         return $this->coverName !== null ? "as`" . $this->coverName . "`" : '';
     }
 
-    public function join(Table $table, $mapping = null, $coverName = false): Table
+    public function join(Table $table, $mapping = null): Table
     {
         $relation = $this->getRelation();
         if (!is_array($mapping)) {
@@ -278,7 +283,7 @@ abstract class Table
         return $that;
     }
 
-    public function leftJoin(Table $table, $mapping, $coverName = false): Table
+    public function leftJoin(Table $table, $mapping): Table
     {
         $relation = $this->getRelation();
         $that = clone $this;
@@ -288,6 +293,28 @@ abstract class Table
         $relation->leftJoin($table, $mapping);
         $that->relation = $relation;
         return $that;
+    }
+
+    public function init_join(Table $table, $mapping = null): Table
+    {
+        $relation = $this->getRelation();
+        if (!is_array($mapping)) {
+            $mapping = [$this->key, $table->cookColumn($mapping)];
+        }
+        $relation->join($table, $mapping);
+        $this->relation = $relation;
+        return $this;
+    }
+
+    public function init_leftJoin(Table $table, $mapping): Table
+    {
+        $relation = $this->getRelation();
+        if (!is_array($mapping)) {
+            $mapping = [$this->key, $table->cookColumn($mapping)];
+        }
+        $relation->leftJoin($table, $mapping);
+        $this->relation = $relation;
+        return $this;
     }
 
     public function getRelation(): Relation
