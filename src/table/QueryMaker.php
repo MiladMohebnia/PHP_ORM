@@ -36,7 +36,7 @@ class QueryMaker
 		return $insertQueryData;
 	}
 
-	public static function update($table, $data): UpdateDataType
+	public static function update(Table $table, $data): UpdateDataType
 	{
 		$first = true;
 		$sets = "";
@@ -64,7 +64,7 @@ class QueryMaker
 		if (($table->index["condition"] ?? false)) {
 			$scopeString = self::index($table);
 		}
-		$query = "UPDATE `" . $table->name() . "` $leftJoinQuery SET $sets " . $scopeString;
+		$query = "UPDATE `" . $table->name() . "` " . $table->getCoverNameString() . " $leftJoinQuery SET $sets " . $scopeString;
 		$updateData = new UpdateDataType;
 		$updateData->string = $query;
 		$updateData->data = $data;
@@ -128,23 +128,15 @@ class QueryMaker
 	}
 
 
-	public static function selectTables(&$table)
+	public static function selectTables(Table &$table)
 	{
-		$tables = "`" . $table->name() . "`";
-		$tables .= $table->relation ? self::concatRelationTableList($table->relation) : '';
+		$tables = "`" . $table->name() . "` " . $table->getCoverNameString();
+		$tables .= $table->relation ? $table->relation->makeRelationString() : '';
 		// $leftJoin = $table->leftJoin ? self::leftJoins($table->leftJoin) : "";
 		// $tables .= " " . @$leftJoin;
 		return $tables;
 	}
 
-	private static function concatRelationTableList(Relation $relation)
-	{
-		$result = '';
-		foreach ($relation->tableList as $table) {
-			$result .= ", `$table`";
-		}
-		return $result;
-	}
 
 	public static function selectcolumnList($columnList)
 	{

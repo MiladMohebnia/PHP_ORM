@@ -14,6 +14,8 @@ abstract class Table
 
     private $tableName;
 
+    public $coverName = null;
+
     private $fetchMode = \PDO::FETCH_OBJ;
 
     //  if we made this table under other table's permition
@@ -57,9 +59,12 @@ abstract class Table
         return isset($this->data[$name]);
     }
 
-    function __construct()
+    function __construct($coverName = false)
     {
         $this->tableName = $this->tableName();
+        if ($coverName) {
+            $this->coverName = $coverName;
+        }
         $this->key = $this->cookColumn($this->key());
     }
 
@@ -67,6 +72,9 @@ abstract class Table
     {
         if (strpos($column, '.') > 0) {
             return $column;
+        }
+        if ($this->coverName != null) {
+            return "`$this->coverName`.`$column`";
         }
         return "`$this->tableName`.`$column`";
     }
@@ -204,6 +212,10 @@ abstract class Table
 
     public function update($data)
     {
+        // preventing update without condition and scope
+        if ($this->index["condition"] ?? false) {
+            return false;
+        }
         if (!$this->validInput($data)) {
             return false;
         }
@@ -216,7 +228,6 @@ abstract class Table
     public function select($columnList = null)
     {
         $that = clone $this;
-        $that->makeRelationMappings();
         $selectQueryData = QueryMaker::select($that, $columnList);
         if ($result = $that->run($selectQueryData->string, $that->index["variables"] ?? [])) {
             return $result;
@@ -234,7 +245,28 @@ abstract class Table
         return $this->tableName;
     }
 
-    public function join(Table $table, $mapping = null): Table
+    public function as($name): Table
+    {
+        return $this->coverName($name);
+    }
+
+    public function coverName($name): Table
+    {
+        $that = clone $this;
+        $that->coverName = $name;
+        $that->key = $that->cookColumn($that->key());
+        if ($that->relation) {
+            $that->relation->mainTableCoverNameString = $that->getCoverNameString();
+        }
+        return $that;
+    }
+
+    public function getCoverNameString()
+    {
+        return $this->coverName !== null ? "as`" . $this->coverName . "`" : '';
+    }
+
+    public function join(Table $table, $mapping = null, $coverName = false): Table
     {
         $relation = $this->getRelation();
         if (!is_array($mapping)) {
@@ -246,16 +278,21 @@ abstract class Table
         return $that;
     }
 
-    public function getRelation(): Relation
+    public function leftJoin(Table $table, $mapping, $coverName = false): Table
     {
-        return $this->Relation ?? new Relation($this);
+        $relation = $this->getRelation();
+        $that = clone $this;
+        if (!is_array($mapping)) {
+            $mapping = [$this->key, $table->cookColumn($mapping)];
+        }
+        $relation->leftJoin($table, $mapping);
+        $that->relation = $relation;
+        return $that;
     }
 
-    public function makeRelationMappings()
+    public function getRelation(): Relation
     {
-        foreach ($this->relation->mappingList as $mapping) {
-            $this->setWhere($mapping[0] . "=" . $mapping[1]);
-        }
+        return $this->relation ?? new Relation($this);
     }
 
     public function relation(): Table
@@ -323,14 +360,13 @@ abstract class Table
         return false;
     }
 
-
     private function run($query, $data = [])
     {
         if ($this->trace) {
-            die(var_dump([
+            die(json_encode([
                 "query" => $query,
                 "data" => $data
-            ]));
+            ], JSON_PRETTY_PRINT));
         }
         $this->connection = $this->connection()->connect();
         if (!$request = $this->connection->PDO->prepare($query)) {
@@ -364,7 +400,7 @@ abstract class Table
 
         // if there's a single result let's return as array so data type
         // not change if there's only a single result
-        if ($request->rowCount() === 1) {
+        if ($request->rowCount() === 1 && !is_array($row)) {
             $row = [$row];
         }
 
