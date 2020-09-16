@@ -53,18 +53,12 @@ class QueryMaker
 			$executeData[] = $value;
 		}
 		$data = $executeData;
-		$leftJoinQuery = '';
-		// if ($table->leftJoin && is_array($table->leftJoin)) {
-		// 	trigger_error('check here please');
-		// 	foreach ($table->leftJoin as $leftJoinTable) {
-		// 		$leftJoinQuery .= ' LEFT JOIN ' . $leftJoinTable[0] . ' ON ' . $leftJoinTable[1];
-		// 	}
-		// }
+		$tables = self::selectTables($table);
 		$scopeString = "";
 		if (($table->index["condition"] ?? false)) {
 			$scopeString = self::index($table);
 		}
-		$query = "UPDATE `" . $table->name() . "` " . $table->getCoverNameString() . " $leftJoinQuery SET $sets " . $scopeString;
+		$query = "UPDATE " . $tables . " SET $sets " . $scopeString;
 		$updateData = new UpdateDataType;
 		$updateData->string = $query;
 		$updateData->data = $data;
@@ -132,8 +126,6 @@ class QueryMaker
 	{
 		$tables = "`" . $table->name() . "` " . $table->getCoverNameString();
 		$tables .= $table->relation ? $table->relation->makeRelationString() : '';
-		// $leftJoin = $table->leftJoin ? self::leftJoins($table->leftJoin) : "";
-		// $tables .= " " . @$leftJoin;
 		return $tables;
 	}
 
