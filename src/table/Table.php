@@ -218,7 +218,7 @@ abstract class Table
     public function update($data)
     {
         // preventing update without condition and scope
-        if ($this->index["condition"] ?? false) {
+        if (!isset($this->index["condition"])) {
             return false;
         }
         if (!$this->validInput($data)) {
