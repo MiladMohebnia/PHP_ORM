@@ -1,7 +1,6 @@
 <?php
 
 use miladm\table\Connection;
-use miladm\table\DatabaseConfiguration;
 use miladm\table\Table;
 
 include "vendor/autoload.php";
@@ -15,7 +14,7 @@ class MainConnection extends Connection
 }
 
 
-class user extends Table
+class User extends Table
 {
     public function connection()
     {
@@ -26,9 +25,114 @@ class user extends Table
     {
         return 'user';
     }
+
+    public function service()
+    {
+        return $this->join(new Service, 'user');
+    }
+
+    public function fullService(): User
+    {
+        $service = new Service('salad');
+        $service = $service->price()->transaction();
+        return $this->leftJoin($service, 'user');
+    }
+
+    public function comments(): User
+    {
+        return $this->join(new Comments, 'user');
+    }
 }
 
-$u = new user();
+
+class Service extends Table
+{
+    public function connection()
+    {
+        return new MainConnection;
+    }
+
+    public function tableName()
+    {
+        return 'service';
+    }
+
+    public function price(): Service
+    {
+        return $this->join(new price, 'service');
+    }
+
+    public function transaction(): Service
+    {
+        return $this->join(new Transaction, 'service');
+    }
+}
+
+class price extends Table
+{
+    public function connection()
+    {
+        return new MainConnection;
+    }
+
+    public function tableName()
+    {
+        return 'price';
+    }
+}
+
+
+class Comments extends Table
+{
+    public function connection()
+    {
+        return new MainConnection;
+    }
+
+    public function tableName()
+    {
+        return 'comments';
+    }
+}
+
+class Transaction extends Table
+{
+    public function connection()
+    {
+        return new MainConnection;
+    }
+
+    public function tableName()
+    {
+        return 'transaction';
+    }
+}
+
+$u = new User();
+$r = $u->trace(1)
+    // ->comments()
+    ->fullService()
+    ->select('user.id as uuid, salad.duration_day, price.price');
+
+die(json_encode(
+    $r,
+    JSON_PRETTY_PRINT
+));
+
+
+// $s = new Service();
+// $p = new Price();
+
+// $u = new User();
+
+// $a = $s->join($u, 'user')->leftJoin('price', 'service.id=price.service');
+// $r = $a->select();
+// // $r = $p->join($a, 'service')->select();
+// die(json_encode(
+//     $r,
+//     JSON_PRETTY_PRINT
+// ));
+
 // $r = $u->query('insert into `user` (`name`, `email`) values (?, ?)', ['milad', 'm@gmail.com']);
 // $r = $u->query('select * from `user`');
 // $r = $u->insert(['name' => 'mahyar', 'email' => 'ma@gmail.com']);
@@ -37,24 +141,11 @@ $u = new user();
 //     ->update(['name' => 'milad', "age" => 10]);
 // $r = $u
 //     ->update(['name' => 'milad', "age" => 12]);
-$r = $u->where('id><?&?', [7, 9])->order('age')->select();
-die(json_encode(
-    $r,
-    JSON_PRETTY_PRINT
-));
+// $r = $u->where('id>=?', [1])->orderDesc()->group('age')->having("_c>3")->limit(1, 0)->select("*, count(*) as _c");
+// $r = $u->where('id>=?', [1])->orderDesc()->group('age')->having("_c>3")->limit(1, 0)->select("*, count(*) as _c");
 
-
-// class book extends Table
-// {
-//     public function connection()
-//     {
-//         return new MainConnection;
-//     }
-
-//     public function tableName()
-//     {
-//         return 'book';
-//     }
-// }
-
-// $b = new book();
+// $r = $s->insert([
+//     'name' => 'sample',
+//     'duration_day' => 13,
+//     'data' => 'dsaf'
+// ]);
