@@ -295,7 +295,7 @@ abstract class Table
 
     public function getCoverNameString()
     {
-        return $this->coverName !== null ? "as`" . $this->coverName . "`" : '';
+        return $this->coverName !== null ? " as `" . $this->coverName . "`" : '';
     }
 
     public function join(Table $table, $mapping = null): Table
