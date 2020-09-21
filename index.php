@@ -1,6 +1,7 @@
 <?php
 
 use miladm\table\Connection;
+use miladm\table\Result;
 use miladm\table\Table;
 
 include "vendor/autoload.php";
@@ -12,7 +13,6 @@ class MainConnection extends Connection
     public $user = 'root';
     public $password = 'root';
 }
-
 
 class User extends Table
 {
@@ -43,7 +43,6 @@ class User extends Table
         return $this->join(new Comments, 'user');
     }
 }
-
 
 class Service extends Table
 {
@@ -81,7 +80,6 @@ class price extends Table
     }
 }
 
-
 class Comments extends Table
 {
     public function connection()
@@ -109,10 +107,14 @@ class Transaction extends Table
 }
 
 $u = new User();
-$r = $u->trace(1)
-    // ->comments()
-    ->fullService()
-    ->select('user.id as uuid, salad.duration_day, price.price');
+$r = $u->trace(0)
+    ->select();
+
+$r[0]->name = "milad";
+die(var_dump(
+    $r[0]->save()
+));
+
 
 die(json_encode(
     $r,

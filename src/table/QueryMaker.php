@@ -47,9 +47,17 @@ class QueryMaker
 			if ($key[0] == "`") {
 				die(trigger_error("don't add ` to column names we handle it!"));
 			}
+			if (strpos($key, '.')) {
+				$key = str_replace('.', '`.`', $key);
+			} else {
+				$key = $table->cookColumn($key);
+			}
 			$first = false;
-			$key = str_replace('.', '`.`', $key);
-			$sets .= "`$key` = ?";
+			if ($key[0] != "`") {
+				$sets .= "`$key` = ?";
+			} else {
+				$sets .= "$key = ?";
+			}
 			$executeData[] = $value;
 		}
 		$data = $executeData;

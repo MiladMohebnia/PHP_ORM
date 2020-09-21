@@ -16,7 +16,8 @@ abstract class Table
 
     public $coverName = null;
 
-    private $fetchMode = \PDO::FETCH_OBJ;
+    // private $fetchMode = \PDO::FETCH_OBJ;
+    private $fetchMode = \PDO::FETCH_ASSOC;
 
     //  if we made this table under other table's permition
     public $base = [];
@@ -430,8 +431,21 @@ abstract class Table
         if ($request->rowCount() === 1 && !is_array($row)) {
             $row = [$row];
         }
+        if (!$row) {
+            return false;
+        }
+        $result = [];
+        foreach ($row as $object) {
+            if (isset($object[$this->key()])) {
+                $that = $this->where("$this->key=?", [$object[$this->key()]]);
+                $result[] = new Result($that, $object);
+            } else {
+                $result = (object) $row;
+                break;
+            }
+        }
 
         // in the end return rows but if anything's wrong let's return false;
-        return $row ?: false;
+        return $result;
     }
 }
