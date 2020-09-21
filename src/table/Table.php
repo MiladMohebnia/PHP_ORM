@@ -16,8 +16,10 @@ abstract class Table
 
     public $coverName = null;
 
-    // private $fetchMode = \PDO::FETCH_OBJ;
     private $fetchMode = \PDO::FETCH_ASSOC;
+
+    // permission to create data object on \miladm\table\Result
+    private $createDataObject = true;
 
     //  if we made this table under other table's permition
     public $base = [];
@@ -231,6 +233,30 @@ abstract class Table
         return $this->run($updateData->string, $executeData);
     }
 
+    public function fetchArray(): Table
+    {
+        $this->fetchMode = \PDO::FETCH_ASSOC;
+        $this->createDataObject = false;
+        return $this;
+    }
+
+
+    public function fetchObject(): Table
+    {
+        $this->fetchMode = \PDO::FETCH_OBJ;
+        $this->createDataObject = false;
+        return $this;
+    }
+
+
+    public function fetchDataObject(): Table
+    {
+        $this->fetchMode = \PDO::FETCH_ASSOC;
+        $this->createDataObject = true;
+        return $this;
+    }
+
+
     public function select($columnList = null)
     {
         $that = clone $this;
@@ -433,6 +459,9 @@ abstract class Table
         }
         if (!$row) {
             return false;
+        }
+        if (!$this->createDataObject) {
+            return $row;
         }
         $result = [];
         foreach ($row as $object) {
