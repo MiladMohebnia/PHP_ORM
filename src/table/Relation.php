@@ -52,7 +52,8 @@ class Relation
 
     private function buildJoinQuery($table, $key)
     {
-        return "$table->type `$table->table` on " . $this->mappingList[$key][0] . " = " . $this->mappingList[$key][1] . " ";
+        $tableName = strpos($table->table, ' as ') ? $table->table :  "`$table->table`";
+        return "$table->type $tableName on " . $this->mappingList[$key][0] . " = " . $this->mappingList[$key][1] . " ";
     }
 
     private function buildJoinQueryFromObject($table, $key)
