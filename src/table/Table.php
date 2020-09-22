@@ -240,6 +240,10 @@ abstract class Table
         return $this;
     }
 
+    public function checkIfFetchArray()
+    {
+        return $this->fetchMode == \PDO::FETCH_ASSOC && $this->createDataObject == false;
+    }
 
     public function fetchObject(): Table
     {
@@ -248,12 +252,21 @@ abstract class Table
         return $this;
     }
 
+    public function checkIfFetchObject()
+    {
+        return $this->fetchMode == \PDO::FETCH_OBJ && $this->createDataObject == false;
+    }
 
     public function fetchDataObject(): Table
     {
         $this->fetchMode = \PDO::FETCH_ASSOC;
         $this->createDataObject = true;
         return $this;
+    }
+
+    public function checkIfFetchDataObject()
+    {
+        return $this->fetchMode == \PDO::FETCH_ASSOC && $this->createDataObject == true;
     }
 
 
@@ -269,7 +282,11 @@ abstract class Table
 
     public function count()
     {
-        return $this->select("count(*) as count")[0]->count;
+        if ($this->checkIfFetchObject() || $this->checkIfFetchDataObject()) {
+            return $this->select("count(*) as count")[0]->count;
+        } elseif ($this->checkIfFetchArray()) {
+            return $this->select("count(*) as count")[0]['count'];
+        }
     }
 
     public function name()
