@@ -35,6 +35,8 @@ abstract class Table
 
     public $trace = false;
 
+    public $safeMode = false;
+
     // parent if exists
     // public $parent = false;
 
@@ -100,6 +102,13 @@ abstract class Table
     {
         $that = clone $this;
         $that->trace = $state;
+        return $that;
+    }
+
+    public function safeMode($state = true)
+    {
+        $that = clone $this;
+        $that->safeMode = $state;
         return $that;
     }
 
@@ -450,7 +459,9 @@ abstract class Table
 
             // mostly error message is the third value of errorInfo()
             // if no error message then return the whole error as object
-            throw new Exception($request->errorInfo()[2] ?? $request->errorInfo());
+            if (!$this->safeMode) {
+                throw new Exception($request->errorInfo()[2] ?? $request->errorInfo());
+            }
             return false;
         }
 
