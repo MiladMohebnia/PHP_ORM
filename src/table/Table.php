@@ -133,10 +133,18 @@ abstract class Table
 
     public function where($condition, $variables = false): Table
     {
+        /**
+         * type 1 : 'a=?&b=?' ---------------> `a`=?&`b`=?
+         * type 2 : a.b=? & c.d=? --------------->`a`.`b`
+         * type 3 : [a => 1, b =>2] ---------------> `a`=?
+         * type 4 : [a => [b => 1], c => [d => 2]] ---------------> `a`.`b`=?&`c`.`d`=?
+         */
         if (is_int($condition)) {
             return $this->where($this->key . "=?", $condition);
-        } elseif (is_array($condition)) {
-            $condition = $this->arrayConditionToString($condition);
+        } elseif (is_array($condition) && $variables === false) {
+            list($condition, $variables) = $this->arrayConditionToString($condition);
+        } elseif (is_string($condition)) {
+            $condition = preg_replace('/(\w+)[ ]*([=><.!])/', '`$1`$2', $condition);
         }
         if (!$condition) {
             return $this;
@@ -380,25 +388,36 @@ abstract class Table
         return $this;
     }
 
-    private function arrayConditionToString($condition)
+    private function arrayConditionToString($condition, $tableName = false)
     {
-        // I can do good shit here
-        /*
-            [a, b] => a and b
-            [[a], [b]] => a or b
-            [[a, c], [b, d]] => (a and c) or (b and d)
-            [[[a], [c]], [b, d]] => (a or c) or (b and d)
-            */
-        $cond = "";
-        $variables = [];
-        $counter = 0;
-        foreach ($condition as $name => $val) {
-            if ($counter++ > 0)
-                $cond .= "&";
-            $cond .= $name . "=?";
-            $variables[] = $val;
+        /**
+         * type 1 : 'a=?&b=?' ---------------> `a`=?&`b`=?
+         * type 2 : a.b=? & c.d=? --------------->`a`.`b`
+         * type 3 : [a => 1, b =>2] ---------------> `a`=?
+         * type 4 : [a => [b => 1], c => [d => 2]] ---------------> `a`.`b`=?&`c`.`d`=?
+         */
+        $string = '';
+        $valueList = [];
+        foreach ($condition as $column => $value) {
+            // var_dump($column);
+            if ($string != "") {
+                $string .= "&";
+            }
+            if (is_array($value)) {
+                list($st, $vList) = $this->arrayConditionToString($value, $column);
+                var_dump($st, $vList);
+                $string .= $st;
+
+                $valueList = array_merge($valueList, $vList);
+            } else {
+                if ($tableName) {
+                    $string .= "`$tableName`.";
+                }
+                $string .= "`$column`=?";
+                $valueList[] = $value;
+            }
         }
-        return $cond;
+        return [$string, $valueList];
     }
 
     private function parseAndAddStringScope($condition, $variables)

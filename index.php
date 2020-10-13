@@ -107,19 +107,24 @@ class Transaction extends Table
 }
 
 $u = new User();
-$r = $u->trace(0)
+$u->trace()
+    ->where([
+        'user' => [
+            'key' => 12,
+            'age' => 15
+        ],
+        "post" => [
+            'title' => 'hello world!'
+        ]
+    ])
+    // ->where('key=?', [1])
+    // ->where('a.`key`=?', [2])
+    // ->where('a.key=?&b.z=?', [3, 4])
     ->select();
+// $r = $u->trace(0)
+//     ->select();
 
-$r[0]->name = "milad";
-die(var_dump(
-    $r[0]->save()
-));
-
-
-die(json_encode(
-    $r,
-    JSON_PRETTY_PRINT
-));
+// $r[0]->name = "milad";
 
 
 // $s = new Service();
