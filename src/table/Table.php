@@ -399,15 +399,12 @@ abstract class Table
         $string = '';
         $valueList = [];
         foreach ($condition as $column => $value) {
-            // var_dump($column);
             if ($string != "") {
                 $string .= "&";
             }
             if (is_array($value)) {
                 list($st, $vList) = $this->arrayConditionToString($value, $column);
-                var_dump($st, $vList);
                 $string .= $st;
-
                 $valueList = array_merge($valueList, $vList);
             } else {
                 if ($tableName) {
