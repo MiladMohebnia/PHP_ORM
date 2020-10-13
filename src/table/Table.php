@@ -409,6 +409,8 @@ abstract class Table
             } else {
                 if ($tableName) {
                     $string .= "`$tableName`.";
+                } else {
+                    $string .= "`$this->tableName`.";
                 }
                 $string .= "`$column`=?";
                 $valueList[] = $value;

@@ -113,9 +113,9 @@ $u->trace()
             'key' => 12,
             'age' => 15
         ],
-        "post" => [
-            'title' => 'hello world!'
-        ]
+        // "post" => [
+        'title' => 'hello world!'
+        // ]
     ])
     // ->where('key=?', [1])
     // ->where('a.`key`=?', [2])
