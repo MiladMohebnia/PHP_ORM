@@ -473,13 +473,18 @@ abstract class Table
 
         // if there was any error then add it to erro list and return false
         // database respond error goes here
-        if (!($result = $request->execute($data))) {
+        try {
+            if (!($result = $request->execute($data))) {
 
-            // mostly error message is the third value of errorInfo()
-            // if no error message then return the whole error as object
-            if (!$this->safeMode) {
-                throw new Exception($request->errorInfo()[2] ?? $request->errorInfo());
+                // mostly error message is the third value of errorInfo()
+                // if no error message then return the whole error as object
+                if (!$this->safeMode) {
+                    throw new Exception($request->errorInfo()[2] ?? $request->errorInfo());
+                }
+                return false;
             }
+        } catch (Exception $e) {
+            ///// error handling here
             return false;
         }
 

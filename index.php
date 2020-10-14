@@ -1,5 +1,10 @@
 <?php
 
+
+/***
+ * trough error return false and log query
+ */
+
 use miladm\table\Connection;
 use miladm\table\Result;
 use miladm\table\Table;
