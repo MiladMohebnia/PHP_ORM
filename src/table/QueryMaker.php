@@ -2,6 +2,7 @@
 
 namespace miladm\table;
 
+use miladm\table\query\DeleteDataType;
 use miladm\table\query\InsertDataType;
 use miladm\table\query\SelectDataType;
 use miladm\table\query\UpdateDataType;
@@ -70,6 +71,19 @@ class QueryMaker
 		$updateData = new UpdateDataType;
 		$updateData->string = $query;
 		$updateData->data = $data;
+		return $updateData;
+	}
+
+	public static function delete(Table $table): DeleteDataType
+	{
+		$scopeString = "";
+		if (($table->index["condition"] ?? false)) {
+			$scopeString = self::index($table);
+		}
+		$query = "DELETE FROM " . $table->name() . $scopeString;
+		$updateData = new DeleteDataType;
+		$updateData->string = $query;
+		$updateData->data = [];
 		return $updateData;
 	}
 

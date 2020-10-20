@@ -388,6 +388,19 @@ abstract class Table
         return $this;
     }
 
+    public function delete()
+    {
+        // preventing update without condition and scope
+        if (!isset($this->index["condition"])) {
+            return false;
+        }
+        $deleteData = QueryMaker::delete($this);
+
+        $this->mergeNewData($deleteData->data);
+        $executeData = array_merge($deleteData->data, ($this->index["variables"] ?? []));
+        return $this->run($deleteData->string, $executeData);
+    }
+
     private function arrayConditionToString($condition, $tableName = false)
     {
         /**

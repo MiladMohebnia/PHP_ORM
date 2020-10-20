@@ -112,6 +112,8 @@ class Transaction extends Table
 }
 
 $u = new User();
+$u->where('a>?', [10])->delete();
+die;
 $u->trace()
     ->where([
         'user' => [
