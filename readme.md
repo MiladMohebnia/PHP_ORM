@@ -7,7 +7,7 @@ With the use of **PDO** communication, it will lower the threat of SQL-injection
 
 ## create
 
-For each table you have to create a Class extends from ``Table` class.
+For each table you have to create a Class extends from `Table` class.
 
 ```php
 use miladm\table\Table;
@@ -38,7 +38,7 @@ class User extends Table {
 
 ## setup actions before using the table
 
-there's a method called ``init` to setup actions before using this table;
+there's a method called `init` to setup actions before using this table;
 
 ```php
 	public function init()
@@ -86,7 +86,7 @@ class User extends Table {
 	}
 ```
 
-you can change `'id` as you wish and your database structure is.
+you can change `'id'` as you wish and your database structure is.
 
 # Query
 
