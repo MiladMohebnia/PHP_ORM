@@ -1,6 +1,6 @@
 {
   "name": "miladm/orm",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "basic and lite orm for php",
   "type": "library",
   "license": "Apache-2.0",

@@ -1,5 +1,3 @@
-[Home](../readme.md)
-
 # Database (table) introduction
 
 This hook takes care of everything you need with database and currently it works with **MySQL** database.
