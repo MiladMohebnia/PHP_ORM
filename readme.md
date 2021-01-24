@@ -133,4 +133,4 @@ $userTable->select();// this will select all records from user table
 
 **note**
 
-> documentation is in progress but codes talks itself. checkout the code for more.
+> documentation is in progress but code talks itself. checkout the code for more.
