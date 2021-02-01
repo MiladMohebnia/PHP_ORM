@@ -13,7 +13,7 @@ include "vendor/autoload.php";
 
 class MainConnection extends Connection
 {
-    public $host = "127.0.0.1";
+    public $host = "172.22.0.2";
     public $databaseName = "sample";
     public $user = 'root';
     public $password = 'root';
@@ -110,6 +110,16 @@ class Transaction extends Table
         return 'transaction';
     }
 }
+
+$u = new User();
+$results = $u->where(['id' => 2])->select()[0];
+$results->email = 'mahyar@gmail.com';
+$results->save();
+die(var_dump(
+    $results
+));
+
+
 
 $u = new User();
 $u->where('a>?', [10])->delete();

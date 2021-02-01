@@ -129,6 +129,22 @@ $userTable->select();// this will select all records from user table
 | init_leftJoin      | table:Table, mapping?:array       | do left join effect current object                                |
 | getRelation        |                                   | return relation object of current object                          |
 
+# Results data object
+
+If you fetch data as object there will be some features assigned to result data object.
+
+## update data
+
+you can update data of current result and call `->save()` on results data object and update will happen on database.
+
+```php
+$UserModel = new User();
+$userData = $userModel->where(['id' => 1])->select();
+echo $userData[0]->name; // its alex for example
+$userData[0]->name = 'jack'; // variable updated but not saved on database
+$userData[0]->save(); // now the change has updated the database
+```
+
 **note**
 
 > documentation is in progress but code talks itself. checkout the code for more.
