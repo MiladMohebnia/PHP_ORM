@@ -480,7 +480,7 @@ abstract class Table
             ], JSON_PRETTY_PRINT));
         }
         $this->connection = $this->connection()->connect();
-        if (!$request = $this->connection->PDO->prepare($query)) {
+        if (!$request = $this->connection?->PDO?->prepare($query)) {
             die(trigger_error("There's a problem in query : " . $query));
         }
 

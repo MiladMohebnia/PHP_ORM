@@ -9,14 +9,12 @@ services:
     ports:
       - 8080:80
 
-  php-fpm:
-    image: mohebnia/php-fpm
+  php:
+    image: git.m0vie.in:5050/reg/php8/dev:latest
     container_name: php-fpm-orm
-    working_dir: /home/www-data/
     volumes:
-      - ./:/home/www-data/
-      - ./php-fpm-conf/php-ini-overrides.ini:/usr/local/etc/php/conf.d/99.overrides.ini
-      - ./php-fpm-conf/xdebug.so:/usr/local/etc/php/modules/xdebug.so
+      - ./:/var/www/html/
+
   mariadb:
     image: mariadb:latest
     container_name: mariadb-orm
@@ -27,5 +25,3 @@ services:
       - MYSQL_PASSWORD=a
     volumes:
       - ./mariadb/data:/var/lib/mysql
-    # ports:
-    #   - 3306:3306

@@ -13,7 +13,7 @@ include "vendor/autoload.php";
 
 class MainConnection extends Connection
 {
-    public $host = "172.22.0.2";
+    public $host = "mariadb";
     public $databaseName = "sample";
     public $user = 'root';
     public $password = 'root';
