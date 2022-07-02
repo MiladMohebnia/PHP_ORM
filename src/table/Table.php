@@ -112,7 +112,7 @@ abstract class Table
         return $that;
     }
 
-    public function query($query, $data = null)
+    public function query($query, $data = [])
     {
         return $this->run($query, $data);
     }
