@@ -14,6 +14,7 @@ include "vendor/autoload.php";
 class MainConnection extends Connection
 {
     public $host = "127.0.0.1";
+    public $port = 3307;
     public $databaseName = "sample";
     public $user = 'root';
     public $password = 'root';

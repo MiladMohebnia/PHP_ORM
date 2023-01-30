@@ -12,12 +12,15 @@ class Connection
     public $user;
     public $password;
     public $PDO;
-    public static $connectionCache;
+    public static $connectionCache = [];
 
     public function connect()
     {
         if (get_class($this)::$connectionCache != null) {
-            return  get_class($this)::$connectionCache;
+            $connection = get_class($this)::$connectionCache;
+            if (isset($connection[$this->databaseName])) {
+                return  get_class($this)::$connectionCache[$this->databaseName];
+            }
         };
         try {
             $this->validateConfiguration();
@@ -26,7 +29,7 @@ class Connection
         } catch (\PDOException $e) {
             echo 'Connection failed: ' . $e->getMessage() . PHP_EOL;
         }
-        get_class($this)::$connectionCache = $this;
+        get_class($this)::$connectionCache[$this->databaseName] = $this;
         return $this;
     }
 
